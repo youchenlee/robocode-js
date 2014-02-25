@@ -1,0 +1,7 @@
+{
+  "name": "robocode-js",
+  "version": "0.1.0",
+  "devDependencies": {
+    "LiveScript": "~1.2.0"
+  }
+}

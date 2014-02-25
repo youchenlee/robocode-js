@@ -1,0 +1,28 @@
+<html>
+    <head>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+        <script type="text/javascript" src="log.js"></script>
+        <script type="text/javascript" src="battle.js"></script>
+        <script type="text/javascript">
+            $(document).ready(function() {
+                var canvas = $("#arena");
+                var battle = new Battle(
+                    canvas[0].getContext("2d"), 
+                    canvas.attr("width"),
+                    canvas.attr("height"),
+                    ['test-robot1.js', 'test-robot2.js']
+                );
+                battle.run();
+            });
+        </script>
+        <style type="text/css">
+            #arena {
+                border: 1px solid grey;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="arena" width="600" height="500"></canvas>
+        <div id="debug"></div>
+    </body>
+</html>
