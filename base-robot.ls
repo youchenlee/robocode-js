@@ -56,7 +56,6 @@ class BaseRobot
       when "interruption"
         logger.log \interruption
         logger.log @event_counter
-        # FIXME the bot went crazy at the beginning
         # TODO the bot need to know its current position
 
         # clean all the event
