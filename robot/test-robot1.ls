@@ -1,11 +1,15 @@
-importScripts('base-robot.js')
+importScripts('../base-robot.js')
 
 class TestRobot1 extends BaseRobot
   onIdle: ->
-    @move_forwards 30
-    @move_backwards 30
-    @turn_left 30
-    @turn_right 30
+    @shoot!
+    @move_forwards Math.random! * 50
+
+    turn-val = Math.random! * 10
+    if Math.random! > 0.5
+      @turn_left turn-val
+    else
+      @turn_right turn-val
 
   onWallCollide: ->
     @move_backwards 10

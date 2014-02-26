@@ -1,4 +1,4 @@
-importScripts('log.js')
+importScripts('../log.js')
 
 class BaseRobot
   (@name = "base-robot") ->
@@ -30,7 +30,10 @@ class BaseRobot
       "action": "turn_right",
       "amount": angle
     }, callback)
-
+  shoot: ->
+    @send({
+      "action": "shoot"
+    })
 
   receive: (msg) !->
     msg_obj = JSON.parse(msg)
