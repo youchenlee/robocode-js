@@ -1,4 +1,4 @@
-importScripts('log.js')
+importScripts('../log.js')
 
 class BaseRobot
   (@name = "base-robot") ->
@@ -30,7 +30,10 @@ class BaseRobot
       "action": "turn_right",
       "amount": angle
     }, callback)
-
+  shoot: ->
+    @send({
+      "action": "shoot"
+    })
 
   receive: (msg) !->
     msg_obj = JSON.parse(msg)
@@ -56,7 +59,6 @@ class BaseRobot
       when "interruption"
         logger.log \interruption
         logger.log @event_counter
-        # FIXME the bot went crazy at the beginning
         # TODO the bot need to know its current position
 
         # clean all the event
