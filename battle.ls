@@ -34,9 +34,12 @@ class AssetsLoader
 
 
 # utility functions
-degrees_to_radians = (degrees) ->
+degree_to_radian = (degrees) ->
   # convert degrees to radians
   degrees * (Math.PI/180)
+
+point_to_radian = (x1, y1, x2, y2) ->
+  (y2 - y1) / (x2 - x1)
 
 euclid_distance = (x1, y1, x2, y2) ->
   # calculate euclidean distance between 2 points
@@ -52,15 +55,15 @@ class Robot
   @battlefield-height = 0
 
   (@x, @y, @source) ->
-    @health = 100
     @angle = 0
     @turret_angle = 0
     @radar_angle = Math.random()*360
     @bullet = null
     @events = {}
     @status = {}
-    @health = $HP
+    @hp = $HP
     @id = 0
+    @is-hit = false
 
     @worker = new Worker(source)
     @worker.onmessage = (e) ~>
@@ -71,8 +74,8 @@ class Robot
     @@battlefield-height = height
 
   move: (distance) ->
-    @x += distance * Math.cos(degrees_to_radians(@angle));
-    @y += distance * Math.sin(degrees_to_radians(@angle));
+    @x += distance * Math.cos(degree_to_radian(@angle));
+    @y += distance * Math.sin(degree_to_radian(@angle));
 
     if in_rect @x, @y, 15, 15, @@battlefield-width - 15, @@battlefield-height - 15
       # hit the wall
@@ -86,6 +89,7 @@ class Robot
   turn: (degrees) ->
     @angle += degrees
 
+
   receive: (msg) ->
     event = JSON.parse(msg)
     #logger.log "receive #{msg}"
@@ -93,10 +97,7 @@ class Robot
       logger.log event.log
       return
     if event.action == "shoot" && @bullet
-      @send({
-        "action": "callback",
-        "event_id": event["event_id"]
-      })
+      @send-callback event["event_id"]
       return
     if event.action == "shoot"
       @bullet = {
@@ -104,11 +105,7 @@ class Robot
         y: @y,
         direction: @angle + @turret_angle
       }
-
-      @send({
-        "action": "callback",
-        "event_id": event["event_id"]
-      })
+      @send-callback event["event_id"]
       return
 
     event["progress"] = 0
@@ -119,32 +116,56 @@ class Robot
   send: (msg_obj) ->
     @worker.postMessage(JSON.stringify(msg_obj))
 
+  get-enemy-robots: ->
+    enemy = []
+    for r in Battle.robots
+      if r.id != @id
+        enemy.push r
+    enemy
+
   send-interruption: ->
     logger.log \send-interruption
     @send({
       "action": "interruption",
-      "x": @x,
-      "y": @y,
+      "me": {angle: @angle, id: @id, x: @x, y: @y, hp: @hp}
+      "enemy-robots": @get-enemy-robots!,
       "status": @status
     })
 
+  send-callback: (event_id) ->
+    @send({
+      "action": "callback",
+      "me": {angle: @angle, id: @id, x: @x, y: @y, hp: @hp}
+      "event_id": event_id,
+      "enemy-robots": @get-enemy-robots!,
+      "status": @status
+    })
+
+  /*
+  check-enemy-spot: ->
+    for enemy-robot in @get-enemy-robots!
+      my-radian = degree_to_radian(@angle + @turret_angle)
+      point-radian = point_to_radian @.x, @.y, enemy-robot.x, enemy-robot.y
+  */
+
   update-bullet: ->
-    @bullet.x += $BULLET_SPEED * Math.cos degrees_to_radians @bullet.direction
-    @bullet.y += $BULLET_SPEED * Math.sin degrees_to_radians @bullet.direction
+    @bullet.x += $BULLET_SPEED * Math.cos degree_to_radian @bullet.direction
+    @bullet.y += $BULLET_SPEED * Math.sin degree_to_radian @bullet.direction
     bullet_wall_collide = !in_rect @bullet.x, @bullet.y, 2, 2, @@battlefield-width - 2, @@battlefield-height - 2
     if bullet_wall_collide
       @bullet = null
       return true
 
-    for enemy_robot in Battle.robots
+    for enemy_robot in @get-enemy-robots!
       # FIXME skip my own robot
-      if enemy_robot.id == @id
-        continue
+      #if enemy_robot.id == @id
+      #  continue
 
       robot_hit = (euclid_distance(@bullet.x, @bullet.y, enemy_robot.x, enemy_robot.y) < 20)
 
       if robot_hit
-        enemy_robot.health -= 3
+        enemy_robot.hp -= 3
+        enemy_robot.is-hit = true
         Battle.explosions.push({
           x: enemy_robot.x,
           y: enemy_robot.y,
@@ -159,8 +180,16 @@ class Robot
   update: !->
     has_sequential_event = false
     is-bullet-hit = false
+    @status = {}
+
     if @bullet
       is-bullet-hit = @update-bullet!
+
+    if @is-hit
+      @events = {}
+      @status.is-hit = true
+      @send-interruption!
+      return
 
     for event_id, event of @events
       if $SEQUENTIAL_EVENTS.indexOf event.action != -1
@@ -172,10 +201,7 @@ class Robot
       logger.log "events[#{event_id}] = {action=#{event.action},progress=#{event.progress}}"
       if event["amount"] <= event["progress"]
         # the action is done
-        @send({
-          "action": "callback",
-          "event_id": event["event_id"]
-        })
+        @send-callback event["event_id"]
         delete @events[event_id]
       else
         switch event["action"]
@@ -270,18 +296,18 @@ class Battle
       # draw robot
       @ctx.save!
       @ctx.translate(robot.x, robot.y)
-      @ctx.rotate(degrees_to_radians(robot.angle))
+      @ctx.rotate(degree_to_radian(robot.angle))
       @ctx.drawImage(@assets.get("body"), -(38/2), -(36/2), 38, 36)
-      @ctx.rotate(degrees_to_radians(robot.turret_angle))
+      @ctx.rotate(degree_to_radian(robot.turret_angle))
       @ctx.drawImage(@assets.get("turret"), -(54/2), -(20/2), 54, 20)
-      @ctx.rotate(degrees_to_radians(robot.radar_angle))
+      @ctx.rotate(degree_to_radian(robot.radar_angle))
       @ctx.drawImage(@assets.get("radar"), -(16/2), -(22/2), 16, 22)
       @ctx.restore!
 
       if robot.bullet
         @ctx.save!
         @ctx.translate robot.bullet.x, robot.bullet.y
-        @ctx.rotate(degrees_to_radians(robot.bullet.direction))
+        @ctx.rotate(degree_to_radian(robot.bullet.direction))
         @ctx.fillRect -3, -3, 6, 6
         @ctx.restore!
 

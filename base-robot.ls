@@ -1,12 +1,15 @@
 importScripts('../log.js')
 
 class BaseRobot
+  me: {id: 0, x: 0, y: 0, hp: 0}
+  enemy-robots: []
+
   (@name = "base-robot") ->
     @event_counter = 0
     @callbacks = {}
     self.onmessage = (e) ~>
       @receive(e.data)
-      
+
     #@_run()
 
 
@@ -38,6 +41,15 @@ class BaseRobot
   receive: (msg) !->
     msg_obj = JSON.parse(msg)
 
+    if msg_obj["enemy-robots"]
+      # update enemy-robots array
+      @enemy-robots = []
+      for r in msg_obj["enemy-robots"]
+        @enemy-robots.push {id: r.id, x: r.x, y: r.y, hp: r.hp}
+
+    if msg_obj.me
+      @me = msg_obj.me
+
     switch msg_obj["action"]
       #the first run
       when "run"
@@ -66,6 +78,10 @@ class BaseRobot
 
         if msg_obj["status"].wall-collide
           @onWallCollide!
+
+        if msg_obj["status"].is-hit
+          @onHit!
+
         @_run!
 
   _run: ->
@@ -79,6 +95,11 @@ class BaseRobot
 
   onWallCollide: !->
     throw "You need to implement the onWallCollide() method"
+
+  onHit: !->
+    throw "You need to implement the onHit() method"
+
+  getEnemyInfo: ->
 
   send: (msg_obj, callback) ->
     logger.log \send + " " + msg_obj.action
