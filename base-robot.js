@@ -5,6 +5,13 @@
   BaseRobot = (function(){
     BaseRobot.displayName = 'BaseRobot';
     var prototype = BaseRobot.prototype, constructor = BaseRobot;
+    prototype.me = {
+      id: 0,
+      x: 0,
+      y: 0,
+      hp: 0
+    };
+    prototype.enemySpot = [];
     function BaseRobot(name){
       var this$ = this;
       this.name = name != null ? name : "base-robot";
@@ -25,6 +32,13 @@
       callback == null && (callback = null);
       return this.send({
         "action": "move_backwards",
+        "amount": distance
+      }, callback);
+    };
+    prototype.move_opposide = function(distance, callback){
+      callback == null && (callback = null);
+      return this.send({
+        "action": "move_opposide",
         "amount": distance
       }, callback);
     };
@@ -50,6 +64,16 @@
     prototype.receive = function(msg){
       var msg_obj;
       msg_obj = JSON.parse(msg);
+      /*
+      if msg_obj["enemy-robots"]
+        # update enemy-robots array
+        @enemy-robots = []
+        for r in msg_obj["enemy-robots"]
+          @enemy-robots.push {id: r.id, x: r.x, y: r.y, hp: r.hp}
+      */
+      if (msg_obj.me) {
+        this.me = msg_obj.me;
+      }
       switch (msg_obj["action"]) {
       case "run":
         this._run();
@@ -72,12 +96,23 @@
         if (msg_obj["status"].wallCollide) {
           this.onWallCollide();
         }
+        if (msg_obj["status"].isHit) {
+          this.onHit();
+        }
+        console.log('onhit-and-run');
         this._run();
+        break;
+      case "enemy-spot":
+        logger.log('enemy-spot');
+        this.enemySpot = [];
+        this.enemySpot = msg_obj["enemy-spot"];
+        this.onEnemySpot();
       }
     };
     prototype._run = function(){
       var this$ = this;
       logger.log(this.event_counter);
+      console.log('run');
       return setTimeout(function(){
         return this$.onIdle();
       }, 0);
@@ -88,6 +123,8 @@
     prototype.onWallCollide = function(){
       throw "You need to implement the onWallCollide() method";
     };
+    prototype.onHit = function(){};
+    prototype.onEnemySpot = function(){};
     prototype.send = function(msg_obj, callback){
       var event_id;
       logger.log('send' + " " + msg_obj.action);

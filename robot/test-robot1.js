@@ -5,8 +5,16 @@
   TestRobot1 = (function(superclass){
     var prototype = extend$((import$(TestRobot1, superclass).displayName = 'TestRobot1', TestRobot1), superclass).prototype, constructor = TestRobot1;
     prototype.onIdle = function(){
+      /*
+      if @enemy-robots.length > 0
+        if @enemy-robots[0].x < @me.x
+          @move_forwards 10
+        else
+          @move_backwards 10
+      else
+        @shoot!
+      */
       var turnVal;
-      this.shoot();
       this.move_forwards(Math.random() * 50);
       turnVal = Math.random() * 10;
       if (Math.random() > 0.5) {
@@ -16,8 +24,21 @@
       }
     };
     prototype.onWallCollide = function(){
-      this.move_backwards(10);
+      this.move_opposide(10);
       return this.turn_left(90);
+    };
+    prototype.onHit = function(){
+      var i$, x, results$ = [];
+      for (i$ = 20; i$ <= 25; ++i$) {
+        x = i$;
+        this.move_backwards(x);
+        this.turn_left(x);
+        results$.push(this.shoot());
+      }
+      return results$;
+    };
+    prototype.onEnemySpot = function(){
+      return this.shoot();
     };
     function TestRobot1(){
       TestRobot1.superclass.apply(this, arguments);
