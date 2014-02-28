@@ -2,7 +2,8 @@ importScripts('../log.js')
 
 class BaseRobot
   me: {id: 0, x: 0, y: 0, hp: 0}
-  enemy-robots: []
+  #enemy-robots: []
+  enemy-spot: []
 
   (@name = "base-robot") ->
     @event_counter = 0
@@ -41,11 +42,13 @@ class BaseRobot
   receive: (msg) !->
     msg_obj = JSON.parse(msg)
 
+    /*
     if msg_obj["enemy-robots"]
       # update enemy-robots array
       @enemy-robots = []
       for r in msg_obj["enemy-robots"]
         @enemy-robots.push {id: r.id, x: r.x, y: r.y, hp: r.hp}
+    */
 
     if msg_obj.me
       @me = msg_obj.me
@@ -81,7 +84,15 @@ class BaseRobot
 
         if msg_obj["status"].is-hit
           @onHit!
+        @_run!
 
+      when "enemy-spot"
+        logger.log \enemy-spot
+        @enemy-spot = []
+        @enemy-spot = msg_obj["enemy-spot"]
+        # clean events
+        @event_counter = 0
+        @onEnemySpot!
         @_run!
 
   _run: ->
@@ -97,9 +108,9 @@ class BaseRobot
     throw "You need to implement the onWallCollide() method"
 
   onHit: !->
-    throw "You need to implement the onHit() method"
 
-  getEnemyInfo: ->
+  onEnemySpot: !->
+
 
   send: (msg_obj, callback) ->
     logger.log \send + " " + msg_obj.action

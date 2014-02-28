@@ -7,6 +7,7 @@
 $SET_TIMEOUT = 10
 $BULLET_SPEED = 3
 $HP = 20
+$ROBOT_RADIUS = 10 # r
 
 $SEQUENTIAL_EVENTS = [\move_forwards \move_backwards \turn_left \turn_right]
 $PARALLEL_EVENTS = [\fire \turn_turret_left \turn_turret_right \turn_radar_left \turn_radar_right]
@@ -34,12 +35,13 @@ class AssetsLoader
 
 
 # utility functions
-degree_to_radian = (degrees) ->
+degrees-to-radians = (degrees) ->
   # convert degrees to radians
   degrees * (Math.PI/180)
 
-point_to_radian = (x1, y1, x2, y2) ->
-  (y2 - y1) / (x2 - x1)
+radians-to-degrees = (radians) ->
+  radians * (180/Math.PI)
+
 
 euclid_distance = (x1, y1, x2, y2) ->
   # calculate euclidean distance between 2 points
@@ -64,6 +66,7 @@ class Robot
     @hp = $HP
     @id = 0
     @is-hit = false
+    @enemy-spot = []
 
     @worker = new Worker(source)
     @worker.onmessage = (e) ~>
@@ -74,8 +77,8 @@ class Robot
     @@battlefield-height = height
 
   move: (distance) ->
-    @x += distance * Math.cos(degree_to_radian(@angle));
-    @y += distance * Math.sin(degree_to_radian(@angle));
+    @x += distance * Math.cos(degrees-to-radians(@angle));
+    @y += distance * Math.sin(degrees-to-radians(@angle));
 
     if in_rect @x, @y, 15, 15, @@battlefield-width - 15, @@battlefield-height - 15
       # hit the wall
@@ -88,7 +91,7 @@ class Robot
 
   turn: (degrees) ->
     @angle += degrees
-
+    @angle = @angle % 360
 
   receive: (msg) ->
     event = JSON.parse(msg)
@@ -123,12 +126,21 @@ class Robot
         enemy.push r
     enemy
 
+  send-enemy-spot: ->
+    logger.log \send-enemy-spot
+    @send({
+      "action": "enemy-spot",
+      "me": {angle: @angle, id: @id, x: @x, y: @y, hp: @hp},
+      "enemy-spot": @enemy-spot,
+      "status": @status
+    })
+
   send-interruption: ->
     logger.log \send-interruption
     @send({
       "action": "interruption",
       "me": {angle: @angle, id: @id, x: @x, y: @y, hp: @hp}
-      "enemy-robots": @get-enemy-robots!,
+      #"enemy-robots": @get-enempy-robots!,
       "status": @status
     })
 
@@ -137,20 +149,42 @@ class Robot
       "action": "callback",
       "me": {angle: @angle, id: @id, x: @x, y: @y, hp: @hp}
       "event_id": event_id,
-      "enemy-robots": @get-enemy-robots!,
+      #"enemy-robots": @get-enemy-robots!,
       "status": @status
     })
 
-  /*
   check-enemy-spot: ->
+    @enemy-spot = []
     for enemy-robot in @get-enemy-robots!
-      my-radian = degree_to_radian(@angle + @turret_angle)
-      point-radian = point_to_radian @.x, @.y, enemy-robot.x, enemy-robot.y
-  */
+      my-radians = degrees-to-radians(@angle + @turret_angle)
+      enemy-position-radians = Math.atan2 enemy-robot.y - @.y, enemy-robot.x - @.x
+      distance = euclid_distance @.x, @.y, enemy-robot.x, enemy-robot.y
+      radians-diff = Math.atan2 $ROBOT_RADIUS, distance
+
+      # XXX a dirty shift
+      if my-radians > Math.PI
+        my-radians -= ( 2*Math.PI )
+
+      max = enemy-position-radians + radians-diff
+      min = enemy-position-radians - radians-diff
+
+      # console.log "max = #{max}"
+      # console.log "min = #{min}"
+      # console.log "my-radians = #{my-radians}"
+      # console.log "diff =" + radians-diff
+
+      if my-radians >= min and my-radians <= max
+        enemy-position-degrees = radians-to-degrees enemy-position-radians
+        @enemy-spot.push {id: enemy-robot.id, degrees: enemy-position-degrees, distance: distance}
+    if @enemy-spot.length > 0
+      return true
+    return false
+
+
 
   update-bullet: ->
-    @bullet.x += $BULLET_SPEED * Math.cos degree_to_radian @bullet.direction
-    @bullet.y += $BULLET_SPEED * Math.sin degree_to_radian @bullet.direction
+    @bullet.x += $BULLET_SPEED * Math.cos degrees-to-radians @bullet.direction
+    @bullet.y += $BULLET_SPEED * Math.sin degrees-to-radians @bullet.direction
     bullet_wall_collide = !in_rect @bullet.x, @bullet.y, 2, 2, @@battlefield-width - 2, @@battlefield-height - 2
     if bullet_wall_collide
       @bullet = null
@@ -189,6 +223,11 @@ class Robot
       @events = {}
       @status.is-hit = true
       @send-interruption!
+      return
+
+    if @id == 1 and @check-enemy-spot!
+      @events = {}
+      @send-enemy-spot!
       return
 
     for event_id, event of @events
@@ -296,18 +335,18 @@ class Battle
       # draw robot
       @ctx.save!
       @ctx.translate(robot.x, robot.y)
-      @ctx.rotate(degree_to_radian(robot.angle))
+      @ctx.rotate(degrees-to-radians(robot.angle))
       @ctx.drawImage(@assets.get("body"), -(38/2), -(36/2), 38, 36)
-      @ctx.rotate(degree_to_radian(robot.turret_angle))
+      @ctx.rotate(degrees-to-radians(robot.turret_angle))
       @ctx.drawImage(@assets.get("turret"), -(54/2), -(20/2), 54, 20)
-      @ctx.rotate(degree_to_radian(robot.radar_angle))
+      @ctx.rotate(degrees-to-radians(robot.radar_angle))
       @ctx.drawImage(@assets.get("radar"), -(16/2), -(22/2), 16, 22)
       @ctx.restore!
 
       if robot.bullet
         @ctx.save!
         @ctx.translate robot.bullet.x, robot.bullet.y
-        @ctx.rotate(degree_to_radian(robot.bullet.direction))
+        @ctx.rotate(degrees-to-radians(robot.bullet.direction))
         @ctx.fillRect -3, -3, 6, 6
         @ctx.restore!
 
