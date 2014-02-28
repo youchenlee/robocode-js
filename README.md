@@ -3,6 +3,8 @@ robocode-js
 
 LiveScript (Javascript) implementation of http://gumuz.nl/projects/robojs/
 
+Demo: http://youchenlee.github.io/robocode-js/
+
 Creating a robot is even simpler
 
 ```
