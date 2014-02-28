@@ -1,7 +1,7 @@
 # TODO Hit another bot detection
-# TODO Hit by a bullet callback
 # TODO hp
 # TODO show bot name
+# TODO turn turret
 
 
 $SET_TIMEOUT = 10
@@ -9,8 +9,8 @@ $BULLET_SPEED = 3
 $HP = 20
 $ROBOT_RADIUS = 10 # r
 
-$SEQUENTIAL_EVENTS = [\move_forwards \move_backwards \turn_left \turn_right]
-$PARALLEL_EVENTS = [\fire \turn_turret_left \turn_turret_right \turn_radar_left \turn_radar_right]
+$SEQUENTIAL_EVENTS = [\move_forwards \move_backwards \turn_left \turn_right \move_opposide]
+$PARALLEL_EVENTS = [\shoot \turn_turret_left \turn_turret_right \turn_radar_left \turn_radar_right]
 
 # assets
 class AssetsLoader
@@ -77,17 +77,18 @@ class Robot
     @@battlefield-height = height
 
   move: (distance) ->
-    @x += distance * Math.cos(degrees-to-radians(@angle));
-    @y += distance * Math.sin(degrees-to-radians(@angle));
+    new-x = @x + distance * Math.cos(degrees-to-radians(@angle));
+    new-y = @y + distance * Math.sin(degrees-to-radians(@angle));
 
-    if in_rect @x, @y, 15, 15, @@battlefield-width - 15, @@battlefield-height - 15
+    if in_rect new-x, new-y, 15, 15, @@battlefield-width - 15, @@battlefield-height - 15
       # hit the wall
       logger.log \not-wall-collide
       @status.wall-collide = false
+      @x = new-x
+      @y = new-y
     else
       logger.log \wall-collide
       @status.wall-collide = true
-
 
   turn: (degrees) ->
     @angle += degrees
@@ -162,8 +163,11 @@ class Robot
       radians-diff = Math.atan2 $ROBOT_RADIUS, distance
 
       # XXX a dirty shift
+      #my-radians = Math.abs my-radians
       if my-radians > Math.PI
         my-radians -= ( 2*Math.PI )
+      if my-radians < -Math.PI
+        my-radians += (2*Math.PI)
 
       max = enemy-position-radians + radians-diff
       min = enemy-position-radians - radians-diff
@@ -222,13 +226,13 @@ class Robot
     if @is-hit
       @events = {}
       @status.is-hit = true
+      @is-hit = false
       @send-interruption!
       return
 
-    if @id == 1 and @check-enemy-spot!
-      @events = {}
+    if @check-enemy-spot!
+      #@events = {}
       @send-enemy-spot!
-      return
 
     for event_id, event of @events
       if $SEQUENTIAL_EVENTS.indexOf event.action != -1
@@ -238,6 +242,7 @@ class Robot
         has_sequential_event = true
 
       logger.log "events[#{event_id}] = {action=#{event.action},progress=#{event.progress}}"
+
       if event["amount"] <= event["progress"]
         # the action is done
         @send-callback event["event_id"]
@@ -248,6 +253,7 @@ class Robot
             event["progress"]++
             @move(1)
             if @status.wall-collide
+              @action-to-collide = 1 #forward
               @events = {}
               @send-interruption!
               break
@@ -256,6 +262,16 @@ class Robot
             event["progress"]++
             @move(-1)
             if @status.wall-collide
+              @action-to-collide = -1 #backward
+              @events = {}
+              @send-interruption!
+              break
+
+          when "move_opposide"
+            event["progress"]++
+            @move(-@action-to-collide)
+            if @status.wall-collide
+              @action-to-collide = -@action-to-collide
               @events = {}
               @send-interruption!
               break

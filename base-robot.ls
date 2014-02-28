@@ -24,6 +24,11 @@ class BaseRobot
       "action": "move_backwards",
       "amount": distance
     }, callback)
+  move_opposide: (distance, callback = null) ->
+    @send({
+      "action": "move_opposide",
+      "amount": distance
+    }, callback)
   turn_left: (angle, callback = null) ->
     @send({
       "action": "turn_left",
@@ -84,6 +89,7 @@ class BaseRobot
 
         if msg_obj["status"].is-hit
           @onHit!
+        console.log \onhit-and-run
         @_run!
 
       when "enemy-spot"
@@ -91,12 +97,13 @@ class BaseRobot
         @enemy-spot = []
         @enemy-spot = msg_obj["enemy-spot"]
         # clean events
-        @event_counter = 0
+        #@event_counter = 0
         @onEnemySpot!
-        @_run!
+        #@_run!
 
   _run: ->
     logger.log @event_counter
+    console.log \run
     setTimeout(~>
       @onIdle!
     , 0)
