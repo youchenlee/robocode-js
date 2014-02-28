@@ -302,6 +302,7 @@ class Battle
 
     @assets = new AssetsLoader({
       "body": 'img/body.png',
+      "body-red": 'img/body-red.png',
       "turret": 'img/turret.png'
       "radar": 'img/radar.png',
       'explosion1-1': 'img/explosion/explosion1-1.png',
@@ -349,10 +350,13 @@ class Battle
 
     for robot in @@robots
       # draw robot
+      body = \body
+      if robot.id == 0
+        body = \body-red
       @ctx.save!
       @ctx.translate(robot.x, robot.y)
       @ctx.rotate(degrees-to-radians(robot.angle))
-      @ctx.drawImage(@assets.get("body"), -(38/2), -(36/2), 38, 36)
+      @ctx.drawImage(@assets.get(body), -(38/2), -(36/2), 38, 36)
       @ctx.rotate(degrees-to-radians(robot.turret_angle))
       @ctx.drawImage(@assets.get("turret"), -(54/2), -(20/2), 54, 20)
       @ctx.rotate(degrees-to-radians(robot.radar_angle))
