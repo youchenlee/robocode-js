@@ -1,7 +1,7 @@
 robocode-js
 ===========
 
-LiveScript (Javascript) implementation of http://gumuz.nl/projects/robojs/
+LiveScript (Javascript) implementation of Robocode. Original from http://gumuz.nl/projects/robojs/
 
 Demo: http://youchenlee.github.io/robocode-js/
 
@@ -17,6 +17,7 @@ class TestRobot1 extends BaseRobot
             @turn_right 30
         else
             @turn_left 30
+        shoot!
 
     onWallCollide: ->
         @move_backwards 10
