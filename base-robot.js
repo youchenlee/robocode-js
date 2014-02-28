@@ -56,6 +56,20 @@
         "amount": angle
       }, callback);
     };
+    prototype.turn_turret_left = function(angle, callback){
+      callback == null && (callback = null);
+      return this.send({
+        "action": "turn_turret_left",
+        "amount": angle
+      });
+    };
+    prototype.turn_turret_right = function(angle, callback){
+      callback == null && (callback = null);
+      return this.send({
+        "action": "turn_turret_right",
+        "amount": angle
+      });
+    };
     prototype.shoot = function(){
       return this.send({
         "action": "shoot"

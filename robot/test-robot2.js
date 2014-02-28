@@ -5,14 +5,9 @@
   TestRobot2 = (function(superclass){
     var prototype = extend$((import$(TestRobot2, superclass).displayName = 'TestRobot2', TestRobot2), superclass).prototype, constructor = TestRobot2;
     prototype.onIdle = function(){
-      this.turn_left(5);
-      /*
-      if @me.x < 200
-        @move_forwards 200
-      else
-        @move_backwards 200
-      */
-      this.move_forwards(30);
+      this.turn_right(10);
+      this.turn_turret_right(180);
+      this.move_forwards(100);
       if (Math.random() > 0.5) {
         return this.turn_right(30);
       } else {

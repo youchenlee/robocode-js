@@ -5,18 +5,10 @@
   TestRobot1 = (function(superclass){
     var prototype = extend$((import$(TestRobot1, superclass).displayName = 'TestRobot1', TestRobot1), superclass).prototype, constructor = TestRobot1;
     prototype.onIdle = function(){
-      /*
-      if @enemy-robots.length > 0
-        if @enemy-robots[0].x < @me.x
-          @move_forwards 10
-        else
-          @move_backwards 10
-      else
-        @shoot!
-      */
       var turnVal;
-      this.move_forwards(Math.random() * 50);
-      turnVal = Math.random() * 10;
+      this.turn_turret_left(90);
+      this.move_forwards(Math.random() * 200);
+      turnVal = Math.random() * 30;
       if (Math.random() > 0.5) {
         return this.turn_left(turnVal);
       } else {

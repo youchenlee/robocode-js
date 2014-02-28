@@ -98,10 +98,14 @@
     };
     prototype.turn = function(degrees){
       this.angle += degrees;
-      return this.angle = this.angle % 360;
+      this.angle = this.angle % 360;
+    };
+    prototype.turnTurret = function(degrees){
+      this.turret_angle += degrees;
+      this.turret_angle = this.turret_angle % 360;
     };
     prototype.receive = function(msg){
-      var event, event_id;
+      var event, i$, ref$, len$, ev, event_id;
       event = JSON.parse(msg);
       if (event.log !== undefined) {
         logger.log(event.log);
@@ -119,6 +123,22 @@
         };
         this.sendCallback(event["event_id"]);
         return;
+      }
+      if (event.action === "turn_turret_left") {
+        for (i$ = 0, len$ = (ref$ = this.events).length; i$ < len$; ++i$) {
+          ev = ref$[i$];
+          if (ev.event === "turn_turret_left") {
+            return;
+          }
+        }
+      }
+      if (event.action === "turn_turret_right") {
+        for (i$ = 0, len$ = (ref$ = this.events).length; i$ < len$; ++i$) {
+          ev = ref$[i$];
+          if (ev.event === "turn_turret_right") {
+            return;
+          }
+        }
       }
       event["progress"] = 0;
       event_id = event["event_id"];
@@ -183,11 +203,12 @@
       });
     };
     prototype.checkEnemySpot = function(){
-      var i$, ref$, len$, enemyRobot, myRadians, enemyPositionRadians, distance, radiansDiff, max, min, enemyPositionDegrees;
+      var i$, ref$, len$, enemyRobot, myAngle, myRadians, enemyPositionRadians, distance, radiansDiff, max, min, enemyPositionDegrees;
       this.enemySpot = [];
       for (i$ = 0, len$ = (ref$ = this.getEnemyRobots()).length; i$ < len$; ++i$) {
         enemyRobot = ref$[i$];
-        myRadians = degreesToRadians(this.angle + this.turret_angle);
+        myAngle = (this.angle + this.turret_angle) % 360;
+        myRadians = degreesToRadians(myAngle);
         enemyPositionRadians = Math.atan2(enemyRobot.y - this.y, enemyRobot.x - this.x);
         distance = euclid_distance(this.x, this.y, enemyRobot.x, enemyRobot.y);
         radiansDiff = Math.atan2($ROBOT_RADIUS, distance);
@@ -203,8 +224,9 @@
           enemyPositionDegrees = radiansToDegrees(enemyPositionRadians);
           this.enemySpot.push({
             id: enemyRobot.id,
-            degrees: enemyPositionDegrees,
-            distance: distance
+            angle: enemyPositionDegrees,
+            distance: distance,
+            hp: enemyRobot.hp
           });
         }
       }
@@ -259,7 +281,7 @@
       }
       for (event_id in ref$ = this.events) {
         event = ref$[event_id];
-        if ($SEQUENTIAL_EVENTS.indexOf(event.action !== -1)) {
+        if ($SEQUENTIAL_EVENTS.indexOf(event.action) !== -1) {
           if (has_sequential_event) {
             continue;
           }
@@ -308,6 +330,14 @@
           case "turn_right":
             event["progress"]++;
             this.turn(1);
+            break;
+          case "turn_turret_left":
+            event["progress"]++;
+            this.turnTurret(-1);
+            break;
+          case "turn_turret_right":
+            event["progress"]++;
+            this.turnTurret(1);
           }
         }
       }
@@ -340,6 +370,7 @@
       }
       this.assets = new AssetsLoader({
         "body": 'img/body.png',
+        "body-red": 'img/body-red.png',
         "turret": 'img/turret.png',
         "radar": 'img/radar.png',
         'explosion1-1': 'img/explosion/explosion1-1.png',
@@ -392,14 +423,18 @@
       return results$;
     };
     prototype._draw = function(){
-      var i$, ref$, len$, robot, i, explosion, results$ = [];
+      var i$, ref$, len$, robot, body, i, explosion, results$ = [];
       this.ctx.clearRect(0, 0, this.width, this.height);
       for (i$ = 0, len$ = (ref$ = constructor.robots).length; i$ < len$; ++i$) {
         robot = ref$[i$];
+        body = 'body';
+        if (robot.id === 0) {
+          body = 'body-red';
+        }
         this.ctx.save();
         this.ctx.translate(robot.x, robot.y);
         this.ctx.rotate(degreesToRadians(robot.angle));
-        this.ctx.drawImage(this.assets.get("body"), -(38 / 2), -(36 / 2), 38, 36);
+        this.ctx.drawImage(this.assets.get(body), -(38 / 2), -(36 / 2), 38, 36);
         this.ctx.rotate(degreesToRadians(robot.turret_angle));
         this.ctx.drawImage(this.assets.get("turret"), -(54 / 2), -(20 / 2), 54, 20);
         this.ctx.rotate(degreesToRadians(robot.radar_angle));
