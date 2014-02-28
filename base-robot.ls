@@ -39,6 +39,16 @@ class BaseRobot
       "action": "turn_right",
       "amount": angle
     }, callback)
+  turn_turret_left: (angle, callback = null) ->
+    @send({
+      "action": "turn_turret_left"
+      "amount": angle
+    })
+  turn_turret_right: (angle, callback = null) ->
+    @send({
+      "action": "turn_turret_right"
+      "amount": angle
+    })
   shoot: ->
     @send({
       "action": "shoot"

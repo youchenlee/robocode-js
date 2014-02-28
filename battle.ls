@@ -90,9 +90,13 @@ class Robot
       logger.log \wall-collide
       @status.wall-collide = true
 
-  turn: (degrees) ->
+  turn: (degrees) !->
     @angle += degrees
     @angle = @angle % 360
+
+  turn-turret: (degrees) !->
+    @turret_angle += degrees
+    @turret_angle = @turret_angle % 360
 
   receive: (msg) ->
     event = JSON.parse(msg)
@@ -111,6 +115,18 @@ class Robot
       }
       @send-callback event["event_id"]
       return
+
+    # FIXME improve performance
+    if event.action == "turn_turret_left"
+      for ev in @events
+        if ev.event == "turn_turret_left"
+          return
+
+    # FIXME improve performance
+    if event.action == "turn_turret_right"
+      for ev in @events
+        if ev.event == "turn_turret_right"
+          return
 
     event["progress"] = 0
     event_id = event["event_id"]
@@ -157,7 +173,8 @@ class Robot
   check-enemy-spot: ->
     @enemy-spot = []
     for enemy-robot in @get-enemy-robots!
-      my-radians = degrees-to-radians(@angle + @turret_angle)
+      my-angle = (@angle + @turret_angle) % 360
+      my-radians = degrees-to-radians(my-angle)
       enemy-position-radians = Math.atan2 enemy-robot.y - @.y, enemy-robot.x - @.x
       distance = euclid_distance @.x, @.y, enemy-robot.x, enemy-robot.y
       radians-diff = Math.atan2 $ROBOT_RADIUS, distance
@@ -179,7 +196,7 @@ class Robot
 
       if my-radians >= min and my-radians <= max
         enemy-position-degrees = radians-to-degrees enemy-position-radians
-        @enemy-spot.push {id: enemy-robot.id, degrees: enemy-position-degrees, distance: distance}
+        @enemy-spot.push {id: enemy-robot.id, angle: enemy-position-degrees, distance: distance, hp: enemy-robot.hp}
     if @enemy-spot.length > 0
       return true
     return false
@@ -235,7 +252,7 @@ class Robot
       @send-enemy-spot!
 
     for event_id, event of @events
-      if $SEQUENTIAL_EVENTS.indexOf event.action != -1
+      if $SEQUENTIAL_EVENTS.indexOf(event.action) != -1
         if has_sequential_event
           # we already have a sequential event in the queue
           continue
@@ -283,6 +300,15 @@ class Robot
           when "turn_right"
             event["progress"]++
             @turn(1)
+
+          when "turn_turret_left"
+            event["progress"]++
+            @turn-turret -1
+
+          when "turn_turret_right"
+            event["progress"]++
+            @turn-turret 1
+
         # end switch
       # end if / else
     # end for
@@ -302,6 +328,7 @@ class Battle
 
     @assets = new AssetsLoader({
       "body": 'img/body.png',
+      "body-red": 'img/body-red.png',
       "turret": 'img/turret.png'
       "radar": 'img/radar.png',
       'explosion1-1': 'img/explosion/explosion1-1.png',
@@ -349,10 +376,13 @@ class Battle
 
     for robot in @@robots
       # draw robot
+      body = \body
+      if robot.id == 0
+        body = \body-red
       @ctx.save!
       @ctx.translate(robot.x, robot.y)
       @ctx.rotate(degrees-to-radians(robot.angle))
-      @ctx.drawImage(@assets.get("body"), -(38/2), -(36/2), 38, 36)
+      @ctx.drawImage(@assets.get(body), -(38/2), -(36/2), 38, 36)
       @ctx.rotate(degrees-to-radians(robot.turret_angle))
       @ctx.drawImage(@assets.get("turret"), -(54/2), -(20/2), 54, 20)
       @ctx.rotate(degrees-to-radians(robot.radar_angle))
