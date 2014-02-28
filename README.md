@@ -29,5 +29,5 @@ bot = new TestRobot1("My first test robot")
 TODO: need more bot actions and callback events
 
 
-----
+## Credits
 Special thanks to Martin Chen, Tim Chen, BinBin Tasi, Sid Wang, Louh Ren-Shan and 豬大寶 for mathematic support.
