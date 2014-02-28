@@ -2,18 +2,10 @@ importScripts('../base-robot.js')
 
 class TestRobot1 extends BaseRobot
   onIdle: ->
-    /*
-    if @enemy-robots.length > 0
-      if @enemy-robots[0].x < @me.x
-        @move_forwards 10
-      else
-        @move_backwards 10
-    else
-      @shoot!
-    */
-    @move_forwards Math.random! * 50
+    @turn_turret_left 90
+    @move_forwards Math.random! * 200
 
-    turn-val = Math.random! * 10
+    turn-val = Math.random! * 30
     if Math.random! > 0.5
       @turn_left turn-val
     else
