@@ -378,7 +378,8 @@ class Battle
 
   _update: !->
     for robot in @@robots
-      robot.update()
+      if robot
+        robot.update!
 
   _update-debug: !->
     text = ""
@@ -390,7 +391,7 @@ class Battle
   _draw: !->
     @ctx.clearRect(0, 0, @width, @height)
 
-    for robot in @@robots
+    for id, robot of @@robots
       # draw robot
       body = \body
       if robot.id == 0
@@ -398,8 +399,15 @@ class Battle
 
       # TODO stop the game
       if robot.hp <= 0
-        body = \explosion1-10
+        Battle.explosions.push({
+          x: robot.x,
+          y: robot.y,
+          progress: 1
+        })
         robot = {}
+        delete @@robots[id]
+        @@robots.splice id, 1
+        continue
 
       @ctx.save!
 
