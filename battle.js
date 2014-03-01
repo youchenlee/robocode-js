@@ -6,7 +6,7 @@
   $HP = 20;
   $ROBOT_RADIUS = 10;
   $MAX_BULLET = 5;
-  $BULLET_INTERVAL = 20;
+  $BULLET_INTERVAL = 15;
   $YELL_TIMEOUT = 50;
   $SEQUENTIAL_EVENTS = ['move_forwards', 'move_backwards', 'turn_left', 'turn_right', 'move_opposide'];
   $PARALLEL_EVENTS = ['shoot', 'turn_turret_left', 'turn_turret_right', 'turn_radar_left', 'turn_radar_right'];
@@ -68,8 +68,8 @@
       this.x = x;
       this.y = y;
       this.source = source;
-      this.angle = 0;
-      this.turret_angle = 0;
+      this.tank_angle = Math.random() * 360;
+      this.turret_angle = Math.random() * 360;
       this.radar_angle = Math.random() * 360;
       this.bullet = [];
       this.events = {};
@@ -94,8 +94,8 @@
     };
     prototype.move = function(distance){
       var newX, newY;
-      newX = this.x + distance * Math.cos(degreesToRadians(this.angle));
-      newY = this.y + distance * Math.sin(degreesToRadians(this.angle));
+      newX = this.x + distance * Math.cos(degreesToRadians(this.tank_angle));
+      newY = this.y + distance * Math.sin(degreesToRadians(this.tank_angle));
       if (in_rect(newX, newY, 15, 15, constructor.battlefieldWidth - 15, constructor.battlefieldHeight - 15)) {
         logger.log('not-wall-collide');
         this.status.wallCollide = false;
@@ -107,10 +107,10 @@
       }
     };
     prototype.turn = function(degrees){
-      this.angle += degrees;
-      this.angle = this.angle % 360;
-      if (this.angle < 0) {
-        this.angle = this.angle + 360;
+      this.tank_angle += degrees;
+      this.tank_angle = this.tank_angle % 360;
+      if (this.tank_angle < 0) {
+        this.tank_angle = this.tank_angle + 360;
       }
     };
     prototype.turnTurret = function(degrees){
@@ -141,7 +141,7 @@
         this.bullet.push({
           x: this.x,
           y: this.y,
-          direction: this.angle + this.turret_angle
+          direction: this.tank_angle + this.turret_angle
         });
         this.sendCallback(event["event_id"]);
         return;
@@ -221,7 +221,7 @@
       isSpot = false;
       for (i$ = 0, len$ = (ref$ = this.getEnemyRobots()).length; i$ < len$; ++i$) {
         enemyRobot = ref$[i$];
-        myAngle = (this.angle + this.turret_angle) % 360;
+        myAngle = (this.tank_angle + this.turret_angle) % 360;
         if (myAngle < 0) {
           myAngle = 360 + myAngle;
         }
@@ -283,17 +283,18 @@
             });
             b = null;
             this.bullet.splice(id, 1);
-            continue;
+            break;
           }
         }
       }
       return true;
     };
     prototype.update = function(){
-      var has_sequential_event, event_id, ref$, event;
+      var has_sequential_event, isTurningTurret, event_id, ref$, event;
       this.me = {
-        angle: this.angle,
-        angle_turret: this.angle_turret,
+        angle: (this.tank_angle + this.turret_angle) % 360,
+        tank_angle: this.tank_angle,
+        turret_angle: this.turret_angle,
         id: this.id,
         x: this.x,
         y: this.y,
@@ -301,6 +302,7 @@
       };
       has_sequential_event = false;
       this.status = {};
+      isTurningTurret = false;
       if (this.bulletTs === Number.MAX_VALUE) {
         this.bulletTs = 0;
       } else {
@@ -372,12 +374,20 @@
             this.turn(1);
             break;
           case "turn_turret_left":
+            if (isTurningTurret) {
+              continue;
+            }
             event["progress"]++;
             this.turnTurret(-1);
+            isTurningTurret = true;
             break;
           case "turn_turret_right":
+            if (isTurningTurret) {
+              continue;
+            }
             event["progress"]++;
             this.turnTurret(1);
+            isTurningTurret = true;
           }
         }
       }
@@ -390,16 +400,18 @@
     Battle.robots = [];
     Battle.explosions = [];
     function Battle(ctx, width, height, sources){
-      var res$, i$, len$, source, id, ref$, r;
+      var w, h, res$, i$, len$, source, id, ref$, r;
       this.ctx = ctx;
       this.width = width;
       this.height = height;
       constructor.explosions = [];
       Robot.setBattlefield(this.width, this.height);
+      w = this.width + 20;
+      h = this.height + 20;
       res$ = [];
       for (i$ = 0, len$ = sources.length; i$ < len$; ++i$) {
         source = sources[i$];
-        res$.push(new Robot(Math.random() * this.width, Math.random() * this.height, source));
+        res$.push(new Robot((Math.random() * w) % this.width, (Math.random() * h) % this.height, source));
       }
       constructor.robots = res$;
       id = 0;
@@ -525,7 +537,7 @@
           text += " turret_angle" + robot.turret_angle;
         }
         this.ctx.fillText(text, textX, textY);
-        this.ctx.rotate(degreesToRadians(robot.angle));
+        this.ctx.rotate(degreesToRadians(robot.tank_angle));
         this.ctx.drawImage(this.assets.get(body), -(38 / 2), -(36 / 2), 38, 36);
         this.ctx.rotate(degreesToRadians(robot.turret_angle));
         this.ctx.drawImage(this.assets.get("turret"), -(54 / 2), -(20 / 2), 54, 20);

@@ -23,60 +23,60 @@
     }
     prototype.move_forwards = function(distance, callback){
       callback == null && (callback = null);
-      return this.send({
+      this.send({
         "action": "move_forwards",
         "amount": distance
       }, callback);
     };
     prototype.move_backwards = function(distance, callback){
       callback == null && (callback = null);
-      return this.send({
+      this.send({
         "action": "move_backwards",
         "amount": distance
       }, callback);
     };
     prototype.move_opposide = function(distance, callback){
       callback == null && (callback = null);
-      return this.send({
+      this.send({
         "action": "move_opposide",
         "amount": distance
       }, callback);
     };
     prototype.turn_left = function(angle, callback){
       callback == null && (callback = null);
-      return this.send({
+      this.send({
         "action": "turn_left",
         "amount": angle
       }, callback);
     };
     prototype.turn_right = function(angle, callback){
       callback == null && (callback = null);
-      return this.send({
+      this.send({
         "action": "turn_right",
         "amount": angle
       }, callback);
     };
     prototype.turn_turret_left = function(angle, callback){
       callback == null && (callback = null);
-      return this.send({
+      this.send({
         "action": "turn_turret_left",
         "amount": angle
       });
     };
     prototype.turn_turret_right = function(angle, callback){
       callback == null && (callback = null);
-      return this.send({
+      this.send({
         "action": "turn_turret_right",
         "amount": angle
       });
     };
     prototype.shoot = function(){
-      return this.send({
+      this.send({
         "action": "shoot"
       });
     };
     prototype.yell = function(msg){
-      return this.send({
+      this.send({
         "action": "yell",
         "msg": msg
       });
@@ -84,13 +84,6 @@
     prototype.receive = function(msg){
       var msg_obj;
       msg_obj = JSON.parse(msg);
-      /*
-      if msg_obj["enemy-robots"]
-        # update enemy-robots array
-        @enemy-robots = []
-        for r in msg_obj["enemy-robots"]
-          @enemy-robots.push {id: r.id, x: r.x, y: r.y, hp: r.hp}
-      */
       if (msg_obj.me) {
         this.me = msg_obj.me;
       }
@@ -132,7 +125,7 @@
       var this$ = this;
       logger.log(this.event_counter);
       console.log('run');
-      return setTimeout(function(){
+      setTimeout(function(){
         return this$.onIdle();
       }, 0);
     };
@@ -150,7 +143,7 @@
       event_id = this.event_counter++;
       this.callbacks[event_id] = callback;
       msg_obj["event_id"] = event_id;
-      return postMessage(JSON.stringify(msg_obj));
+      postMessage(JSON.stringify(msg_obj));
     };
     return BaseRobot;
   }());
