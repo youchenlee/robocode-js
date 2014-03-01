@@ -414,7 +414,9 @@
       var i$, ref$, len$, robot;
       for (i$ = 0, len$ = (ref$ = constructor.robots).length; i$ < len$; ++i$) {
         robot = ref$[i$];
-        robot.update();
+        if (robot) {
+          robot.update();
+        }
       }
     };
     prototype._updateDebug = function(){
@@ -427,17 +429,24 @@
       $('#debug').html(text);
     };
     prototype._draw = function(){
-      var i$, ref$, len$, robot, body, textX, textY, text, i, explosion;
+      var id, ref$, robot, body, textX, textY, text, i$, len$, i, explosion;
       this.ctx.clearRect(0, 0, this.width, this.height);
-      for (i$ = 0, len$ = (ref$ = constructor.robots).length; i$ < len$; ++i$) {
-        robot = ref$[i$];
+      for (id in ref$ = constructor.robots) {
+        robot = ref$[id];
         body = 'body';
         if (robot.id === 0) {
           body = 'body-red';
         }
         if (robot.hp <= 0) {
-          body = 'explosion1-10';
+          Battle.explosions.push({
+            x: robot.x,
+            y: robot.y,
+            progress: 1
+          });
           robot = {};
+          delete constructor.robots[id];
+          constructor.robots.splice(id, 1);
+          continue;
         }
         this.ctx.save();
         this.ctx.translate(robot.x, robot.y);
