@@ -14,47 +14,47 @@ class BaseRobot
     #@_run()
 
 
-  move_forwards: (distance, callback = null) ->
+  move_forwards: (distance, callback = null) !->
     @send({
       "action": "move_forwards",
       "amount": distance
     }, callback)
-  move_backwards: (distance, callback = null) ->
+  move_backwards: (distance, callback = null) !->
     @send({
       "action": "move_backwards",
       "amount": distance
     }, callback)
-  move_opposide: (distance, callback = null) ->
+  move_opposide: (distance, callback = null) !->
     @send({
       "action": "move_opposide",
       "amount": distance
     }, callback)
-  turn_left: (angle, callback = null) ->
+  turn_left: (angle, callback = null) !->
     @send({
       "action": "turn_left",
       "amount": angle
     }, callback)
-  turn_right: (angle, callback = null) ->
+  turn_right: (angle, callback = null) !->
     @send({
       "action": "turn_right",
       "amount": angle
     }, callback)
 
-  turn_turret_left: (angle, callback = null) ->
+  turn_turret_left: (angle, callback = null) !->
     @send({
       "action": "turn_turret_left"
       "amount": angle
     })
-  turn_turret_right: (angle, callback = null) ->
+  turn_turret_right: (angle, callback = null) !->
     @send({
       "action": "turn_turret_right"
       "amount": angle
     })
-  shoot: ->
+  shoot: !->
     @send({
       "action": "shoot"
     })
-  yell: (msg) ->
+  yell: (msg) !->
     @send({
       "action": "yell",
       "msg": msg
@@ -62,14 +62,6 @@ class BaseRobot
 
   receive: (msg) !->
     msg_obj = JSON.parse(msg)
-
-    /*
-    if msg_obj["enemy-robots"]
-      # update enemy-robots array
-      @enemy-robots = []
-      for r in msg_obj["enemy-robots"]
-        @enemy-robots.push {id: r.id, x: r.x, y: r.y, hp: r.hp}
-    */
 
     if msg_obj.me
       @me = msg_obj.me
@@ -116,7 +108,7 @@ class BaseRobot
         @onEnemySpot!
         #@_run!
 
-  _run: ->
+  _run: !->
     logger.log @event_counter
     console.log \run
     setTimeout(~>
@@ -134,7 +126,7 @@ class BaseRobot
   onEnemySpot: !->
 
 
-  send: (msg_obj, callback) ->
+  send: (msg_obj, callback) !->
     logger.log \send + " " + msg_obj.action
     event_id = @event_counter++
     @callbacks[event_id] = callback

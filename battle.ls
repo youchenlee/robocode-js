@@ -9,7 +9,7 @@ $BULLET_SPEED = 3
 $HP = 20
 $ROBOT_RADIUS = 10 # r
 $MAX_BULLET = 5
-$BULLET_INTERVAL = 20
+$BULLET_INTERVAL = 15
 $YELL_TIMEOUT = 50
 
 $SEQUENTIAL_EVENTS = [\move_forwards \move_backwards \turn_left \turn_right \move_opposide]
@@ -64,9 +64,9 @@ class Robot
   @battlefield-height = 0
 
   (@x, @y, @source) ->
-    @angle = 0
-    @turret_angle = 0
-    @radar_angle = Math.random()*360
+    @tank_angle = Math.random! * 360
+    @turret_angle = Math.random! * 360
+    @radar_angle = Math.random! * 360
     @bullet = []
     @events = {}
     @status = {}
@@ -89,8 +89,8 @@ class Robot
     @@battlefield-height = height
 
   move: (distance) ->
-    new-x = @x + distance * Math.cos(degrees-to-radians(@angle));
-    new-y = @y + distance * Math.sin(degrees-to-radians(@angle));
+    new-x = @x + distance * Math.cos(degrees-to-radians(@tank_angle));
+    new-y = @y + distance * Math.sin(degrees-to-radians(@tank_angle));
 
     if in_rect new-x, new-y, 15, 15, @@battlefield-width - 15, @@battlefield-height - 15
       # hit the wall
@@ -103,10 +103,10 @@ class Robot
       @status.wall-collide = true
 
   turn: (degrees) !->
-    @angle += degrees
-    @angle = @angle % 360
-    if @angle < 0
-      @angle = @angle + 360
+    @tank_angle += degrees
+    @tank_angle = @tank_angle % 360
+    if @tank_angle < 0
+      @tank_angle = @tank_angle + 360
 
   turn-turret: (degrees) !->
     @turret_angle += degrees
@@ -131,7 +131,7 @@ class Robot
         @send-callback event["event_id"]
         return
       @bullet-ts = 0
-      @bullet.push {x: @x, y: @y, direction: @angle + @turret_angle }
+      @bullet.push {x: @x, y: @y, direction: @tank_angle + @turret_angle }
       @send-callback event["event_id"]
       return
 
@@ -202,7 +202,7 @@ class Robot
     @enemy-spot = []
     is-spot = false
     for enemy-robot in @get-enemy-robots!
-      my-angle = (@angle + @turret_angle) % 360
+      my-angle = (@tank_angle + @turret_angle) % 360
       if my-angle < 0
         my-angle = 360 + my-angle
       my-radians = degrees-to-radians(my-angle)
@@ -260,15 +260,16 @@ class Robot
           })
           b = null
           @bullet.splice id, 1
-          continue
+          break
         # end if robot_hit
       # end for enemy_robot
     true
 
   update: !->
-    @me = {angle: @angle, angle_turret: @angle_turret, id: @id, x: @x, y: @y, hp: @hp}
+    @me = {angle: (@tank_angle + @turret_angle) % 360, tank_angle: @tank_angle, turret_angle: @turret_angle, id: @id, x: @x, y: @y, hp: @hp}
     has_sequential_event = false
     @status = {}
+    is-turning-turret = false
 
     if @bullet-ts == Number.MAX_VALUE
       @bullet-ts = 0
@@ -341,12 +342,18 @@ class Robot
             @turn(1)
 
           when "turn_turret_left"
+            if is-turning-turret
+              continue
             event["progress"]++
             @turn-turret -1
+            is-turning-turret = true
 
           when "turn_turret_right"
+            if is-turning-turret
+              continue
             event["progress"]++
             @turn-turret 1
+            is-turning-turret = true
 
         # end switch
       # end if / else
@@ -359,7 +366,9 @@ class Battle
   (@ctx, @width, @height, sources) ->
     @@explosions = []
     Robot.set-battlefield @width, @height
-    @@robots = [new Robot(Math.random()*@width, Math.random()*@height, source) for source in sources]
+    w = @width + 20
+    h = @height + 20
+    @@robots = [new Robot((Math.random()*w)%@width, (Math.random()*h)%@height, source) for source in sources]
     id = 0
     for r in @@robots
       r.id = id
@@ -476,7 +485,7 @@ class Battle
 
 
 
-      @ctx.rotate(degrees-to-radians(robot.angle))
+      @ctx.rotate(degrees-to-radians(robot.tank_angle))
       @ctx.drawImage(@assets.get(body), -(38/2), -(36/2), 38, 36)
       @ctx.rotate(degrees-to-radians(robot.turret_angle))
       @ctx.drawImage(@assets.get("turret"), -(54/2), -(20/2), 54, 20)

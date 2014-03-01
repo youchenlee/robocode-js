@@ -55,7 +55,9 @@ TODO: need more bot actions and callback events
    * @me.y
    * @me.hp
    * @me.angle - Your current angle (tank angle + turret angle)
-   
+   * @me.tank_angle
+   * @me.turret_angle
+
  * Enemy info
    * @enemy-spot[N].id
    * @enemy-spot[N].hp
