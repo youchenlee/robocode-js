@@ -75,6 +75,12 @@
         "action": "shoot"
       });
     };
+    prototype.yell = function(msg){
+      return this.send({
+        "action": "yell",
+        "msg": msg
+      });
+    };
     prototype.receive = function(msg){
       var msg_obj;
       msg_obj = JSON.parse(msg);

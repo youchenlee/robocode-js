@@ -7,10 +7,11 @@
     prototype.onIdle = function(){
       if (this.myVarEnemy) {
         if (this.me.angle + this.me.angle_turret % 360 > this.myVarEnemy[0].angle) {
-          this.turn_turret_left(70);
+          this.turn_turret_left(45);
         } else {
-          this.turn_turret_right(70);
+          this.turn_turret_right(45);
         }
+        this.shoot();
       } else {
         this.turn_turret_left(35);
         this.turn_left(35);
@@ -26,11 +27,13 @@
       this.move_forwards(40);
       this.turn_left(40);
       this.move_forwards(40);
-      return this.turn_right(40);
+      this.turn_right(40);
+      return this.yell("No! I'm hit!");
     };
     prototype.onEnemySpot = function(){
       this.myVarEnemy = this.enemySpot;
-      return this.shoot();
+      this.shoot();
+      return this.yell("Enemy spotted!");
     };
     function TestRobot1(){
       TestRobot1.superclass.apply(this, arguments);
