@@ -56,8 +56,7 @@ class BaseRobot
   yell: (msg) ->
     @send({
       "action": "yell",
-      "msg": msg,
-      "amount": 70
+      "msg": msg
     })
 
   receive: (msg) !->

@@ -4,10 +4,13 @@
 # TODO turn turret
 
 
-$SET_TIMEOUT = 20
+$SET_TIMEOUT = 10
 $BULLET_SPEED = 3
 $HP = 20
 $ROBOT_RADIUS = 10 # r
+$MAX_BULLET = 5
+$BULLET_INTERVAL = 30
+$YELL_TIMEOUT = 50
 
 $SEQUENTIAL_EVENTS = [\move_forwards \move_backwards \turn_left \turn_right \move_opposide]
 $PARALLEL_EVENTS = [\shoot \turn_turret_left \turn_turret_right \turn_radar_left \turn_radar_right]
@@ -64,7 +67,7 @@ class Robot
     @angle = 0
     @turret_angle = 0
     @radar_angle = Math.random()*360
-    @bullet = null
+    @bullet = []
     @events = {}
     @status = {}
     @hp = $HP
@@ -72,8 +75,10 @@ class Robot
     @is-hit = false
     @enemy-spot = []
     @me = {}
+    @yell-ts = 0
     @is-yell = false
     @yell-msg = undefined
+    @bullet-ts = 0
 
     @worker = new Worker(source)
     @worker.onmessage = (e) ~>
@@ -107,6 +112,7 @@ class Robot
 
   yell: (msg) !->
     @is-yell = true
+    @yell-ts = 0
     @yell-msg = msg
 
   receive: (msg) ->
@@ -115,15 +121,13 @@ class Robot
     if event.log != undefined
       logger.log event.log
       return
-    if event.action == "shoot" && @bullet
-      @send-callback event["event_id"]
-      return
+
     if event.action == "shoot"
-      @bullet = {
-        x: @x,
-        y: @y,
-        direction: @angle + @turret_angle
-      }
+      if (@bullet.length >= $MAX_BULLET) || (@bullet-ts < $BULLET_INTERVAL)
+        @send-callback event["event_id"]
+        return
+      @bullet-ts = 0
+      @bullet.push {x: @x, y: @y, direction: @angle + @turret_angle }
       @send-callback event["event_id"]
       return
 
@@ -132,18 +136,21 @@ class Robot
     if event.action == "turn_turret_left"
       for ev in @events
         if ev.action == "turn_turret_left"
+          @send-callback event["event_id"]
           return
 
     # FIXME improve performance
     if event.action == "turn_turret_right"
       for ev in @events
         if ev.action == "turn_turret_right"
+          @send-callback event["event_id"]
           return
 
     if event.action == "yell"
-      for ev in @events
-        if ev.action == "yell"
-          return
+      if @yell-ts == 0
+        @yell event.msg
+      @send-callback event["event_id"]
+      return
 
     event["progress"] = 0
     event_id = event["event_id"]
@@ -221,44 +228,46 @@ class Robot
 
 
   update-bullet: ->
-    @bullet.x += $BULLET_SPEED * Math.cos degrees-to-radians @bullet.direction
-    @bullet.y += $BULLET_SPEED * Math.sin degrees-to-radians @bullet.direction
-    bullet_wall_collide = !in_rect @bullet.x, @bullet.y, 2, 2, @@battlefield-width - 2, @@battlefield-height - 2
-    if bullet_wall_collide
-      @bullet = null
-      return true
+    for id, b of @bullet
+      b.x += $BULLET_SPEED * Math.cos degrees-to-radians b.direction
+      b.y += $BULLET_SPEED * Math.sin degrees-to-radians b.direction
+      bullet_wall_collide = !in_rect b.x, b.y, 2, 2, @@battlefield-width - 2, @@battlefield-height - 2
+      if bullet_wall_collide
+        b = null
+        @bullet.splice id, 1
+        continue
 
-    for enemy_robot in @get-enemy-robots!
-      # FIXME skip my own robot
-      #if enemy_robot.id == @id
-      #  continue
+      for enemy_robot in @get-enemy-robots!
+        robot_hit = (euclid_distance(b.x, b.y, enemy_robot.x, enemy_robot.y) < 20)
 
-      robot_hit = (euclid_distance(@bullet.x, @bullet.y, enemy_robot.x, enemy_robot.y) < 20)
-
-      if robot_hit
-        enemy_robot.hp -= 3
-        enemy_robot.is-hit = true
-        Battle.explosions.push({
-          x: enemy_robot.x,
-          y: enemy_robot.y,
-          progress: 1
-        })
-        @bullet = null
-        return true
-      # end if robot_hit
-    # end for enemy_robot
-    false
+        if robot_hit
+          enemy_robot.hp -= 3
+          enemy_robot.is-hit = true
+          Battle.explosions.push({
+            x: enemy_robot.x,
+            y: enemy_robot.y,
+            progress: 1
+          })
+          b = null
+          @bullet.splice id, 1
+          continue
+        # end if robot_hit
+      # end for enemy_robot
+    true
 
   update: !->
     @me = {angle: @angle, angle_turret: @angle_turret, id: @id, x: @x, y: @y, hp: @hp}
     has_sequential_event = false
-    is-bullet-hit = false
     @status = {}
-    @is-yell = false
-    found-yell = false
 
-    if @bullet
-      is-bullet-hit = @update-bullet!
+    if @bullet-ts == Number.MAX_VALUE
+      @bullet-ts = 0
+    else
+      @bullet-ts++
+
+    if @bullet.length > 0
+      @update-bullet!
+
 
     if @is-hit
       @events = {}
@@ -328,13 +337,6 @@ class Robot
           when "turn_turret_right"
             event["progress"]++
             @turn-turret 1
-
-          when "yell"
-            if found-yell
-              delete @events[event_id]
-            event["progress"]++
-            @yell event.msg
-            found-yell = true
 
         # end switch
       # end if / else
@@ -407,7 +409,8 @@ class Battle
     for robot in @@robots
       ev = JSON.stringify robot.events, null, "\t"
       me = JSON.stringify robot.me, null, "\t"
-      text += "#{robot.id}:\n" + "me:\n#{me}\n" + "events:\n#{ev}\n\n"
+      bullet = JSON.stringify robot.bullet, null, "\t"
+      text += "#{robot.id}:\n" + "me:\n#{me}\n" + "events:\n#{ev}\nbullet:\n#{bullet}\n"
 
     $ \#debug .html text
 
@@ -437,19 +440,25 @@ class Battle
       @ctx.translate(robot.x, robot.y)
 
       # draw text
-      @ctx.textAlign = "right";
-      @ctx.textBaseline = "bottom";
-      text-x = 40
-      text-y = 30
-      if (@width - robot.x) < 30
+      @ctx.textAlign = "left";
+      @ctx.textBaseline = "top";
+      text-x = 20
+      text-y = 20
+      if (@width - robot.x) < 100
         text-x = - text-x
-      if (@height - robot.y) < 30
+        @ctx.textAlign = "right"
+      if (@height - robot.y) < 100
         text-y = - text-y
+        #@ctx.textBaseline = "top"
       text = "#{robot.hp}/#{$HP}"
 
-      if robot.is-yell
-        @ctx.font = "30px Verdana"
+      if robot.is-yell and (robot.yell-ts < $YELL_TIMEOUT)
+        @ctx.font = "17px Verdana"
         text = robot.yell-msg
+        robot.yell-ts++
+      else
+        robot.yell-ts = 0
+        robot.is-yell = false
 
       if $CANVAS_DEBUG
         text += " turret_angle#{robot.turret_angle}"
@@ -463,20 +472,15 @@ class Battle
       @ctx.drawImage(@assets.get("turret"), -(54/2), -(20/2), 54, 20)
       @ctx.rotate(degrees-to-radians(robot.radar_angle))
       @ctx.drawImage(@assets.get("radar"), -(16/2), -(22/2), 16, 22)
-
-
-      #@ctx.textAlign = "right";
-      #@ctx.textBaseline = "bottom";
-      #@ctx.fillText("( 500 , 375 )", 100, 100);
-
       @ctx.restore!
 
-      if robot.bullet
-        @ctx.save!
-        @ctx.translate robot.bullet.x, robot.bullet.y
-        @ctx.rotate(degrees-to-radians(robot.bullet.direction))
-        @ctx.fillRect -3, -3, 6, 6
-        @ctx.restore!
+      if robot.bullet.length > 0
+        for b in robot.bullet
+          @ctx.save!
+          @ctx.translate b.x, b.y
+          @ctx.rotate(degrees-to-radians(b.direction))
+          @ctx.fillRect -3, -3, 6, 6
+          @ctx.restore!
 
     for i in @@explosions
       explosion = @@explosions.pop!
