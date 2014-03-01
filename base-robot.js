@@ -124,7 +124,6 @@
         break;
       case "enemy-spot":
         logger.log('enemy-spot');
-        this.enemySpot = [];
         this.enemySpot = msg_obj["enemy-spot"];
         this.onEnemySpot();
       }
