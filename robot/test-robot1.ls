@@ -4,9 +4,9 @@ class TestRobot1 extends BaseRobot
   onIdle: ->
     if @my-var-enemy
       if (@me.angle + @me.angle_turret % 360 ) > @my-var-enemy.[0].angle
-        @turn_turret_left 70
+        @turn_turret_left 45
       else
-        @turn_turret_right 70
+        @turn_turret_right 45
     else
       @turn_turret_left 35
       @turn_left 35
@@ -28,5 +28,6 @@ class TestRobot1 extends BaseRobot
   onEnemySpot: ->
     @my-var-enemy = @enemy-spot
     @shoot!
+    @yell "殺！"
 
 tr = new TestRobot1("My first test robot")

@@ -53,6 +53,12 @@ class BaseRobot
     @send({
       "action": "shoot"
     })
+  yell: (msg) ->
+    @send({
+      "action": "yell",
+      "msg": msg,
+      "amount": 70
+    })
 
   receive: (msg) !->
     msg_obj = JSON.parse(msg)

@@ -4,7 +4,7 @@
 # TODO turn turret
 
 
-$SET_TIMEOUT = 10
+$SET_TIMEOUT = 20
 $BULLET_SPEED = 3
 $HP = 20
 $ROBOT_RADIUS = 10 # r
@@ -13,7 +13,7 @@ $SEQUENTIAL_EVENTS = [\move_forwards \move_backwards \turn_left \turn_right \mov
 $PARALLEL_EVENTS = [\shoot \turn_turret_left \turn_turret_right \turn_radar_left \turn_radar_right]
 
 $CANVAS_DEBUG = false
-$DIV_DEBUG = false
+$DIV_DEBUG = true
 
 
 # assets
@@ -72,6 +72,8 @@ class Robot
     @is-hit = false
     @enemy-spot = []
     @me = {}
+    @is-yell = false
+    @yell-msg = undefined
 
     @worker = new Worker(source)
     @worker.onmessage = (e) ~>
@@ -103,9 +105,13 @@ class Robot
     @turret_angle += degrees
     @turret_angle = @turret_angle % 360
 
+  yell: (msg) !->
+    @is-yell = true
+    @yell-msg = msg
+
   receive: (msg) ->
     event = JSON.parse(msg)
-    #logger.log "receive #{msg}"
+    #loggernnnn.log "receive #{msg}"
     if event.log != undefined
       logger.log event.log
       return
@@ -121,16 +127,22 @@ class Robot
       @send-callback event["event_id"]
       return
 
+    # remove duplicate events
     # FIXME improve performance
     if event.action == "turn_turret_left"
       for ev in @events
-        if ev.event == "turn_turret_left"
+        if ev.action == "turn_turret_left"
           return
 
     # FIXME improve performance
     if event.action == "turn_turret_right"
       for ev in @events
-        if ev.event == "turn_turret_right"
+        if ev.action == "turn_turret_right"
+          return
+
+    if event.action == "yell"
+      for ev in @events
+        if ev.action == "yell"
           return
 
     event["progress"] = 0
@@ -242,6 +254,8 @@ class Robot
     has_sequential_event = false
     is-bullet-hit = false
     @status = {}
+    @is-yell = false
+    found-yell = false
 
     if @bullet
       is-bullet-hit = @update-bullet!
@@ -315,6 +329,13 @@ class Robot
             event["progress"]++
             @turn-turret 1
 
+          when "yell"
+            if found-yell
+              delete @events[event_id]
+            event["progress"]++
+            @yell event.msg
+            found-yell = true
+
         # end switch
       # end if / else
     # end for
@@ -384,7 +405,9 @@ class Battle
   _update-debug: !->
     text = ""
     for robot in @@robots
-      text += "#{robot.id}:<br />" + "hp: #{robot.me.hp}<br />" + "angle: #{robot.me.angle}<br />" + "<br />"
+      ev = JSON.stringify robot.events, null, "\t"
+      me = JSON.stringify robot.me, null, "\t"
+      text += "#{robot.id}:\n" + "me:\n#{me}\n" + "events:\n#{ev}\n\n"
 
     $ \#debug .html text
 
@@ -423,6 +446,10 @@ class Battle
       if (@height - robot.y) < 30
         text-y = - text-y
       text = "#{robot.hp}/#{$HP}"
+
+      if robot.is-yell
+        @ctx.font = "30px Verdana"
+        text = robot.yell-msg
 
       if $CANVAS_DEBUG
         text += " turret_angle#{robot.turret_angle}"
