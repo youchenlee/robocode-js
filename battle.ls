@@ -4,19 +4,19 @@
 # TODO turn turret
 
 
-$SET_TIMEOUT = 10
+$SET_TIMEOUT = 5
 $BULLET_SPEED = 3
 $HP = 20
 $ROBOT_RADIUS = 10 # r
 $MAX_BULLET = 5
-$BULLET_INTERVAL = 30
+$BULLET_INTERVAL = 20
 $YELL_TIMEOUT = 50
 
 $SEQUENTIAL_EVENTS = [\move_forwards \move_backwards \turn_left \turn_right \move_opposide]
 $PARALLEL_EVENTS = [\shoot \turn_turret_left \turn_turret_right \turn_radar_left \turn_radar_right]
 
 $CANVAS_DEBUG = false
-$DIV_DEBUG = true
+$DIV_DEBUG = false
 
 
 # assets
@@ -105,10 +105,14 @@ class Robot
   turn: (degrees) !->
     @angle += degrees
     @angle = @angle % 360
+    if @angle < 0
+      @angle = @angle + 360
 
   turn-turret: (degrees) !->
     @turret_angle += degrees
     @turret_angle = @turret_angle % 360
+    if @turret_angle < 0
+      @turret_angle = @turret_angle + 360
 
   yell: (msg) !->
     @is-yell = true
@@ -196,8 +200,11 @@ class Robot
 
   check-enemy-spot: ->
     @enemy-spot = []
+    is-spot = false
     for enemy-robot in @get-enemy-robots!
       my-angle = (@angle + @turret_angle) % 360
+      if my-angle < 0
+        my-angle = 360 + my-angle
       my-radians = degrees-to-radians(my-angle)
       enemy-position-radians = Math.atan2 enemy-robot.y - @.y, enemy-robot.x - @.x
       distance = euclid_distance @.x, @.y, enemy-robot.x, enemy-robot.y
@@ -220,8 +227,11 @@ class Robot
 
       if my-radians >= min and my-radians <= max
         enemy-position-degrees = radians-to-degrees enemy-position-radians
-        @enemy-spot.push {id: enemy-robot.id, angle: enemy-position-degrees, distance: distance, hp: enemy-robot.hp}
-    if @enemy-spot.length > 0
+        if enemy-position-degrees < 0
+          enemy-position-degrees = 360 + enemy-position-degrees
+        @enemy-spot.push {id: enemy-robot.id, angle: enemy-position-degrees, distance: distance, hp: enemy-robot.hp, x: enemy-robot.x, y: enemy-robot.y}
+        is-spot = true
+    if is-spot
       return true
     return false
 
@@ -410,7 +420,8 @@ class Battle
       ev = JSON.stringify robot.events, null, "\t"
       me = JSON.stringify robot.me, null, "\t"
       bullet = JSON.stringify robot.bullet, null, "\t"
-      text += "#{robot.id}:\n" + "me:\n#{me}\n" + "events:\n#{ev}\nbullet:\n#{bullet}\n"
+      enemy-spot = JSON.stringify robot.enemy-spot, null, "\t"
+      text += "#{robot.id}:\n" + "me:\n#{me}\n" + "events:\n#{ev}\nbullet:\n#{bullet}\nenemy-spot:#{enemy-spot}\n"
 
     $ \#debug .html text
 
@@ -449,7 +460,6 @@ class Battle
         @ctx.textAlign = "right"
       if (@height - robot.y) < 100
         text-y = - text-y
-        #@ctx.textBaseline = "top"
       text = "#{robot.hp}/#{$HP}"
 
       if robot.is-yell and (robot.yell-ts < $YELL_TIMEOUT)
