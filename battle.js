@@ -11,7 +11,7 @@
   $SEQUENTIAL_EVENTS = ['move_forwards', 'move_backwards', 'turn_left', 'turn_right', 'move_opposide'];
   $PARALLEL_EVENTS = ['shoot', 'turn_turret_left', 'turn_turret_right', 'turn_radar_left', 'turn_radar_right'];
   $CANVAS_DEBUG = false;
-  $DIV_DEBUG = false;
+  $DIV_DEBUG = true;
   AssetsLoader = (function(){
     AssetsLoader.displayName = 'AssetsLoader';
     var prototype = AssetsLoader.prototype, constructor = AssetsLoader;

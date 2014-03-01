@@ -16,7 +16,7 @@ $SEQUENTIAL_EVENTS = [\move_forwards \move_backwards \turn_left \turn_right \mov
 $PARALLEL_EVENTS = [\shoot \turn_turret_left \turn_turret_right \turn_radar_left \turn_radar_right]
 
 $CANVAS_DEBUG = false
-$DIV_DEBUG = false
+$DIV_DEBUG = true
 
 
 # assets
