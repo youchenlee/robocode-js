@@ -1,7 +1,7 @@
 importScripts('../base-robot.js')
 
-class TestRobot2 extends BaseRobot
-  onIdle: ->
+class Boss2 extends BaseRobot
+  onIdle: !->
     @turn_right 10
     @turn_turret_right 180
 
@@ -11,15 +11,15 @@ class TestRobot2 extends BaseRobot
     else
       @turn_left 30
 
-  onWallCollide: ->
+  onWallCollide: !->
     @move_opposide 10
     @turn_left 90
 
-  onHit: ->
+  onHit: !->
     @turn_right 30
     @move_forwards 50
 
-  onEnemySpot: ->
+  onEnemySpot: !->
     @shoot!
 
-tr = new TestRobot2("My first test robot")
+tr = new Boss2("Boss 2")
