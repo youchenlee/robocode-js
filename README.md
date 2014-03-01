@@ -74,6 +74,7 @@ TODO: need more bot actions and callback events
  * @turn_turret_left (angle)
  * @turn_turret_right (angle)
  * @shoot()
+ * @yell(message)
 
 ### Events:
 
