@@ -5,31 +5,31 @@
   TestRobot1 = (function(superclass){
     var prototype = extend$((import$(TestRobot1, superclass).displayName = 'TestRobot1', TestRobot1), superclass).prototype, constructor = TestRobot1;
     prototype.onIdle = function(){
-      var turnVal;
-      this.turn_turret_left(90);
-      this.move_forwards(Math.random() * 200);
-      turnVal = Math.random() * 30;
-      if (Math.random() > 0.5) {
-        return this.turn_left(turnVal);
+      if (this.myVarEnemy) {
+        if (this.me.angle + this.me.angle_turret % 360 > this.myVarEnemy[0].angle) {
+          this.turn_turret_left(70);
+        } else {
+          this.turn_turret_right(70);
+        }
       } else {
-        return this.turn_right(turnVal);
+        this.turn_turret_left(35);
+        this.turn_left(35);
+        this.move_forwards(Math.random() * 200);
       }
+      return this.myVarEnemy = undefined;
     };
     prototype.onWallCollide = function(){
       this.move_opposide(10);
       return this.turn_left(90);
     };
     prototype.onHit = function(){
-      var i$, x, results$ = [];
-      for (i$ = 20; i$ <= 25; ++i$) {
-        x = i$;
-        this.move_backwards(x);
-        this.turn_left(x);
-        results$.push(this.shoot());
-      }
-      return results$;
+      this.move_forwards(40);
+      this.turn_left(40);
+      this.move_forwards(40);
+      return this.turn_right(40);
     };
     prototype.onEnemySpot = function(){
+      this.myVarEnemy = this.enemySpot;
       return this.shoot();
     };
     function TestRobot1(){
