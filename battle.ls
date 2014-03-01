@@ -12,6 +12,10 @@ $ROBOT_RADIUS = 10 # r
 $SEQUENTIAL_EVENTS = [\move_forwards \move_backwards \turn_left \turn_right \move_opposide]
 $PARALLEL_EVENTS = [\shoot \turn_turret_left \turn_turret_right \turn_radar_left \turn_radar_right]
 
+$CANVAS_DEBUG = false
+$DIV_DEBUG = false
+
+
 # assets
 class AssetsLoader
   (@assets, @callback) ->
@@ -34,7 +38,7 @@ class AssetsLoader
     @assets[asset_name]
 
 
-# utility functions
+# utility functionsv
 degrees-to-radians = (degrees) ->
   # convert degrees to radians
   degrees * (Math.PI/180)
@@ -67,6 +71,7 @@ class Robot
     @id = 0
     @is-hit = false
     @enemy-spot = []
+    @me = {}
 
     @worker = new Worker(source)
     @worker.onmessage = (e) ~>
@@ -147,7 +152,7 @@ class Robot
     logger.log \send-enemy-spot
     @send({
       "action": "enemy-spot",
-      "me": {angle: @angle, id: @id, x: @x, y: @y, hp: @hp},
+      "me": @me,
       "enemy-spot": @enemy-spot,
       "status": @status
     })
@@ -156,7 +161,7 @@ class Robot
     logger.log \send-interruption
     @send({
       "action": "interruption",
-      "me": {angle: @angle, id: @id, x: @x, y: @y, hp: @hp}
+      "me": @me,
       #"enemy-robots": @get-enempy-robots!,
       "status": @status
     })
@@ -164,7 +169,7 @@ class Robot
   send-callback: (event_id) ->
     @send({
       "action": "callback",
-      "me": {angle: @angle, id: @id, x: @x, y: @y, hp: @hp}
+      "me": @me,
       "event_id": event_id,
       #"enemy-robots": @get-enemy-robots!,
       "status": @status
@@ -233,6 +238,7 @@ class Robot
     false
 
   update: !->
+    @me = {angle: @angle, angle_turret: @angle_turret, id: @id, x: @x, y: @y, hp: @hp}
     has_sequential_event = false
     is-bullet-hit = false
     @status = {}
@@ -359,6 +365,8 @@ class Battle
   _loop: ->
     @_update!
     @_draw!
+    if $DIV_DEBUG
+      @_update-debug!
 
     setTimeout(~>
       @_loop!
@@ -368,10 +376,18 @@ class Battle
     for robot in @@robots
       robot.send(msg_obj)
 
-  _update: ->
+  _update: !->
     for robot in @@robots
       robot.update()
-  _draw: ->
+
+  _update-debug: !->
+    text = ""
+    for robot in @@robots
+      text += "#{robot.id}:<br />" + "hp: #{robot.me.hp}<br />" + "angle: #{robot.me.angle}<br />" + "<br />"
+
+    $ \#debug .html text
+
+  _draw: !->
     @ctx.clearRect(0, 0, @width, @height)
 
     for robot in @@robots
@@ -379,14 +395,45 @@ class Battle
       body = \body
       if robot.id == 0
         body = \body-red
+
+      # TODO stop the game
+      if robot.hp <= 0
+        body = \explosion1-10
+        robot = {}
+
       @ctx.save!
+
       @ctx.translate(robot.x, robot.y)
+
+      # draw text
+      @ctx.textAlign = "right";
+      @ctx.textBaseline = "bottom";
+      text-x = 40
+      text-y = 30
+      if (@width - robot.x) < 30
+        text-x = - text-x
+      if (@height - robot.y) < 30
+        text-y = - text-y
+      text = "#{robot.hp}/#{$HP}"
+
+      if $CANVAS_DEBUG
+        text += " turret_angle#{robot.turret_angle}"
+      @ctx.fillText(text, text-x, text-y);
+
+
+
       @ctx.rotate(degrees-to-radians(robot.angle))
       @ctx.drawImage(@assets.get(body), -(38/2), -(36/2), 38, 36)
       @ctx.rotate(degrees-to-radians(robot.turret_angle))
       @ctx.drawImage(@assets.get("turret"), -(54/2), -(20/2), 54, 20)
       @ctx.rotate(degrees-to-radians(robot.radar_angle))
       @ctx.drawImage(@assets.get("radar"), -(16/2), -(22/2), 16, 22)
+
+
+      #@ctx.textAlign = "right";
+      #@ctx.textBaseline = "bottom";
+      #@ctx.fillText("( 500 , 375 )", 100, 100);
+
       @ctx.restore!
 
       if robot.bullet
