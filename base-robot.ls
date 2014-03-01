@@ -39,6 +39,7 @@ class BaseRobot
       "action": "turn_right",
       "amount": angle
     }, callback)
+
   turn_turret_left: (angle, callback = null) ->
     @send({
       "action": "turn_turret_left"
@@ -109,7 +110,6 @@ class BaseRobot
 
       when "enemy-spot"
         logger.log \enemy-spot
-        @enemy-spot = []
         @enemy-spot = msg_obj["enemy-spot"]
         # clean events
         #@event_counter = 0
