@@ -366,13 +366,19 @@ class Battle
   (@ctx, @width, @height, sources) ->
     @@explosions = []
     Robot.set-battlefield @width, @height
-    w = @width + 20
-    h = @height + 20
-    @@robots = [new Robot((Math.random()*w)%@width, (Math.random()*h)%@height, source) for source in sources]
+    robot-appear-pos-y = @height / 2
+    robot-appear-pos-x-inc = @width / 3
+    robot-appear-pos-x = robot-appear-pos-x-inc
     id = 0
-    for r in @@robots
+    # FIXME support more than 2 robots
+    for source in sources
+      r = new Robot(robot-appear-pos-x, robot-appear-pos-y, source)
       r.id = id
+      @@robots.push r
       id++
+      robot-appear-pos-x += robot-appear-pos-x-inc
+      if id >= 2
+        robot-appear-pos-x = Math.random! * (@width - 100 + 20 )
 
     @assets = new AssetsLoader({
       "body": 'img/body.png',
