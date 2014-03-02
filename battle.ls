@@ -16,7 +16,6 @@ $SEQUENTIAL_EVENTS = [\move_forwards \move_backwards \turn_left \turn_right \mov
 $PARALLEL_EVENTS = [\shoot \turn_turret_left \turn_turret_right \turn_radar_left \turn_radar_right]
 
 $CANVAS_DEBUG = false
-$DIV_DEBUG = true
 
 
 # assets
@@ -363,16 +362,23 @@ class Robot
 class Battle
   @robots = []
   @explosions = []
+  @enable-div-debug = false
   (@ctx, @width, @height, sources) ->
     @@explosions = []
     Robot.set-battlefield @width, @height
-    w = @width + 20
-    h = @height + 20
-    @@robots = [new Robot((Math.random()*w)%@width, (Math.random()*h)%@height, source) for source in sources]
+    robot-appear-pos-y = @height / 2
+    robot-appear-pos-x-inc = @width / 3
+    robot-appear-pos-x = robot-appear-pos-x-inc
     id = 0
-    for r in @@robots
+    # FIXME support more than 2 robots
+    for source in sources
+      r = new Robot(robot-appear-pos-x, robot-appear-pos-y, source)
       r.id = id
+      @@robots.push r
       id++
+      robot-appear-pos-x += robot-appear-pos-x-inc
+      if id >= 2
+        robot-appear-pos-x = Math.random! * (@width - 100 + 20 )
 
     @assets = new AssetsLoader({
       "body": 'img/body.png',
@@ -407,7 +413,7 @@ class Battle
   _loop: ->
     @_update!
     @_draw!
-    if $DIV_DEBUG
+    if @@enable-div-debug
       @_update-debug!
 
     setTimeout(~>
@@ -511,3 +517,11 @@ class Battle
 
 # export objects
 window.Battle = Battle
+
+window.triggerDebug = ->
+  if window.Battle.enable-div-debug
+    window.Battle.enable-div-debug = false
+    $ \#debug .html ""
+  else
+    window.Battle.enable-div-debug = true
+  true
