@@ -4,6 +4,8 @@ robocode-js
 LiveScript (Javascript) implementation of Robocode. Original from http://gumuz.nl/projects/robojs/
 
 Demo: http://youchenlee.github.io/robocode-js/
+Report issues to https://github.com/youchenlee/robocode-js/issues
+
 
 Creating a robot is even simpler
 
