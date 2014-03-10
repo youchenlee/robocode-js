@@ -5,7 +5,6 @@ LiveScript (Javascript) implementation of Robocode. Original from http://gumuz.n
  * I created this project for students in [NCCUCS Software Engineering Course (2014)](http://nccucs-se.github.io/) to learn teamwork in git/github. For more information, please refer to http://nccucs-se.github.io/
  * The final idea is to donate this project to [g0v](http://g0v.tw/), for begineers of open source developers to learn git/github in a fun way.
  * The project is now lack of UI, to fight your own robots, you may need to edit the HTML pages to add your robot scripts to it.
- * Currently the copyright of this project is on [Gumuz](http://gumuz.nl/projects/robojs/). Thought I rewrite most of the codes, but the first version of my LiveScript codes are converted from CoffeeScript, which is the work from [Gumuz](http://gumuz.nl/projects/robojs/). I'm still waiting for the Author to provide a source code License.
 
  * Demo: http://youchenlee.github.io/robocode-js/
  * Report issues to https://github.com/youchenlee/robocode-js/issues
@@ -90,6 +89,15 @@ TODO: need more bot actions and callback events
  * OnWallCollide() - When the tank collide the wall
  * OnHit() - When hit by a bullet
  * OnEnemySpot() - When your turret is directly face to an enemy (there seems no reason not to fire!)
+ * 
+
+### Licensing
+
+ * The first version of my LiveScript codes are converted from CoffeeScript, which is the work from Guyon at  [Gumuz](http://gumuz.nl/projects/robojs/). Guyon has agreed to release this project in a opensource license, but we havn't decide the license yet. It will be likely to be MIT. I'll update later.
+
+ * All the arts in this project are Under Eclipse Public License.
+
 
 ## Credits
+
 Special thanks to Martain Chen, Tim Chen, BinBin Tasi, Sid Wang, Louh Ren-Shan and 豬大寶 for mathematic support.
