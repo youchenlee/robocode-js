@@ -95,7 +95,7 @@ TODO: need more bot actions and callback events
 
  * The first version of my LiveScript codes are converted from CoffeeScript, which is the work from Guyon at  [Gumuz](http://gumuz.nl/projects/robojs/). Guyon has agreed to release this project in a opensource license, but we havn't decide the license yet. It will be likely to be MIT. I'll update later.
 
- * All the arts in this project are Under Eclipse Public License.
+ * All the arts in this project are under the Eclipse Public License (EPL).
 
 
 ## Credits
