@@ -91,7 +91,7 @@ TODO: need more bot actions and callback events
  * OnEnemySpot() - When your turret is directly face to an enemy (there seems no reason not to fire!)
  * 
 
-### Licensing
+## Licensing
 
  * The first version of my LiveScript codes are converted from CoffeeScript, which is the work from Guyon at  [Gumuz](http://gumuz.nl/projects/robojs/). Guyon has agreed to release this project in a opensource license, but we havn't decide the license yet. It will be likely to be MIT. I'll update later.
 
