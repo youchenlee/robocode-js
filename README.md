@@ -89,7 +89,29 @@ TODO: need more bot actions and callback events
  * OnWallCollide() - When the tank collide the wall
  * OnHit() - When hit by a bullet
  * OnEnemySpot() - When your turret is directly face to an enemy (there seems no reason not to fire!)
- * 
+
+
+## Build from LiveScript
+
+ * To compile from LiveScript, first, install `nodejs` from http://nodejs.org/
+ * Second, make sure you got `npm` and `run` command exetable on your console. (If you are on MS Windows, make sure the PATH environment variable is setting correct to run `npm` and `node`)
+ * If you have `make` command, i.e. on Linux or Mac OSX, just go to the repository root directory and type `make`, everything will be done.
+ * If you do not have `make` command, run the following command manually. (haven't test on MS Windows.)
+   * `npm install`
+   * `node_modules/.bin/lsc -c *.ls`
+   * `node_modules/.bin/lsc -c -b log.ls`
+   * `node_modules/.bin/lsc -c robot/*.ls`
+ * Done. Use your browser to open `index.html` file.
+
+## Run directly without compiling anything
+
+ * switch to `gh-pages` branch, you will got everything to run this program.
+
+   `git checkout gh-pages`
+
+## Note
+
+ * google-chrome is not allow to run a web worker of a local javascript file. Please use the `--allow-file-access-from-files` option to start chrome. If you run this project on a web server, this won't be a problem.
 
 ## Licensing
 
